@@ -8,11 +8,11 @@ import Http
 import Array
 
 type Msg = RightAnswer | NextWord Int | NextPuzzle | DataReceived (Result Http.Error String)
-type alias Model = { randomNumber : Int , message : String , words : List String }
+type alias Model = { randomNumber : Int , message : String , words : List String , guess : List Char}
 
 init : () -> (Model, Cmd Msg)
 init _ =
-  ( Model 1 "" ["ashok","kumar"] 
+  ( Model 1 "as" ["ashok","kumar"] []
   , Http.send DataReceived (Http.getString url)
   )
 
@@ -22,7 +22,7 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model = 
         case msg of
                 NextPuzzle -> (model, Random.generate NextWord (randNum 100) )
-                NextWord randomIndex -> ({ model | randomNumber = randomIndex } , Cmd.none)
+                NextWord randomIndex -> ({ randomNumber = randomIndex, message = model.message, words = model.words, guess = (List.repeat (String.length (getWord randomIndex model.words)) '_')} , Cmd.none)
                 RightAnswer -> ({ model | message = "You win"} , Cmd.none)
                 DataReceived (Ok sentences) -> let words = String.split " " sentences in ({model| words = words}, Cmd.none)
                 DataReceived (Err _) ->  (model , Cmd.none)
@@ -32,7 +32,7 @@ subscriptions model =
   Sub.none
 
 view : Model -> Html Msg
-view model = div[][ h1[] (viewWord model.randomNumber model) , button [ onClick NextPuzzle ] [text  "Next Puzzle"] ] 
+view model = div[][ h1[] (viewWord model.randomNumber model) , button [ onClick NextPuzzle ] [text  "Next Puzzle"] , h1[] [text (String.fromList ( List.intersperse ' ' model.guess))]] 
 viewWord idx model = [text (getWord idx model.words)]
 getWord idx words = Array.get idx (Array.fromList words) |> Maybe.withDefault "black"
 
